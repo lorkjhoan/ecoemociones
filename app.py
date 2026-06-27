@@ -8,11 +8,11 @@ import cv2
 app = Flask(__name__)
 
 # === CARGAR MODELO ===
-model_path = os.path.join("modelo", "modelo_emociones_v2.h5")
+model_path = os.path.join("modelo", "modelo_affectnet_v1.h5")
 model = load_model(model_path)
 
 # === ETIQUETAS DEL MODELO ===
-class_names = ["feliz", "triste", "enojado", "sorprendido", "asustado"]
+class_names = ['asustado', 'enojado', 'feliz', 'sorprendido', 'triste']
 
 # === CLASIFICADOR DE ROSTROS ===
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
@@ -35,7 +35,7 @@ def preprocess_frame(frame_bytes):
     # Si no hay rostros, usa la imagen completa
 
     # Redimensionar y normalizar
-    img_resized = Image.fromarray(img_np).resize((224, 224))
+    img_resized = Image.fromarray(img_np).resize((100, 100))
     img_array = np.array(img_resized) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
