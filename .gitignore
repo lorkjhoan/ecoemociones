@@ -1,3 +1,17 @@
+# Entornos virtuales
 venv/
-limpiar.h5.py 
+.venv/
+
+# Caché de Python
+__pycache__/
+*.pyc
+
+# Modelo (se descarga aparte por su tamaño)
 modelo/*.h5
+
+# Scripts locales
+limpiar.h5.py
+
+# Configuración de editores
+.idea/
+.vscode/
