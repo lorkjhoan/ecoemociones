@@ -149,5 +149,8 @@ ecoemociones/
 
 ---
 
-## 💚 Créditos
-Proyecto desarrollado con inteligencia artificial y amor por el bienestar emocional.
+## 👥 Autores
+- **Gabriela Robles Bautista**
+- **Jhoan Esteban Rodriguez** — [@lorkjhoan](https://github.com/lorkjhoan)
+
+Proyecto desarrollado con inteligencia artificial y amor por el bienestar emocional 💚
