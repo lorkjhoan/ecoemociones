@@ -166,7 +166,8 @@
 
     let corazonInterval;
 
-    mascota.addEventListener("mousedown", (e) => {
+    // Pointer Events: funciona igual con mouse, dedo o lápiz
+    mascota.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       if (estadoActual === "enojado" || Date.now() - ultimoEnojo < 2000) return;
       acariciando = true;
@@ -179,10 +180,18 @@
       }, 250);
     });
 
-    mascota.addEventListener("mouseup", () => {
+    // Termina la caricia al soltar, al salir de Eco o si el navegador cancela el gesto
+    function terminarCaricia() {
       acariciando = false;
       clearInterval(corazonInterval);
+    }
+
+    ["pointerup", "pointerleave", "pointercancel"].forEach(evt => {
+      mascota.addEventListener(evt, terminarCaricia);
     });
+
+    // Evita que la pulsación larga en tableta abra el menú del navegador
+    mascota.addEventListener("contextmenu", e => e.preventDefault());
 
     mascota.addEventListener("click", () => {
       const ahora = Date.now();
@@ -196,7 +205,9 @@
       }
     });
 
-    mascota.addEventListener("mouseenter", () => {
+    // Solo con mouse: con el dedo no existe "acercar el puntero"
+    mascota.addEventListener("pointerenter", (e) => {
+      if (e.pointerType !== "mouse") return;
       if (!acariciando && estadoActual !== "sorprendido" && estadoActual !== "enojado") {
         cambiarEmocion("sorprendido", 2000);
       }
@@ -217,7 +228,7 @@
       }, 8000);
     }
 
-    ["click", "mousemove", "mousedown"].forEach(evt => {
+    ["click", "pointermove", "pointerdown"].forEach(evt => {
       mascota.addEventListener(evt, reiniciarInactividad);
       mascara.addEventListener(evt, reiniciarInactividad);
     });

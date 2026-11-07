@@ -176,13 +176,25 @@
       ponerTexto(confianzaTexto, `Seguridad del reconocimiento: ${porcentaje} %`);
     }
 
+    // Se pone en false si no hay permiso para usar la cámara
+    let camaraDisponible = true;
+
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
       video.srcObject = stream;
+    }).catch(error => {
+      // Sin cámara: avisar al acompañante y detener el ciclo de predicción
+      camaraDisponible = false;
+      ponerTexto(emotionTitulo, "No puedo ver la cámara");
+      ponerTexto(emotionText, "Revisa que el navegador tenga permiso para usar la cámara y recarga la página.");
+      console.error("No se pudo activar la cámara:", error);
     });
 
     // Ciclo de predicción: la siguiente petición se programa solo cuando
     // termina la anterior, así nunca se acumulan peticiones al servidor
     async function ciclo() {
+      // Si la cámara no está disponible, no seguir intentando
+      if (!camaraDisponible) return;
+
       // No enviar imágenes mientras la cámara aún no carga
       if (!video.videoWidth) {
         setTimeout(ciclo, INTERVALO_MS);
