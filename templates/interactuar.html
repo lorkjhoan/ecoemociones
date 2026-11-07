@@ -2,219 +2,104 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EcoEmociones 🐾 - Interactúa con tu Mascota</title>
-  <style>
-    body {
-      background-color: #f0f9f9;
-      font-family: "Segoe UI", sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      padding-top: 20px;
-      user-select: none;
-    }
-
-    h1 {
-      color: #2a7f7f;
-      margin-bottom: 20px;
-      font-size: 2em;
-      text-align: center;
-    }
-
-    /* Estructura general */
-    .interaccion {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 30px;
-      flex-wrap: wrap;
-    }
-
-    /* 📘 Panel de instrucciones */
-    .tutorial {
-      width: 200px;
-      background: #ffffff;
-      padding: 15px;
-      border-radius: 14px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      font-size: 0.9rem;
-    }
-
-    .tutorial h3 {
-      text-align: center;
-      color: #2a7f7f;
-      margin-top: 0;
-    }
-
-    .tutorial ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .tutorial li {
-      margin-bottom: 8px;
-      line-height: 1.4;
-    }
-
-    /* 🐱 Contenedor mascota */
-    #mascota-container {
-      position: relative;
-      width: 320px;
-      height: 320px;
-      border-radius: 25px;
-      background-color: #b3d1ff;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      transition: background 0.6s ease;
-      animation: respirar 3s ease-in-out infinite;
-    }
-
-    @keyframes respirar {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-    }
-
-    #mascota {
-      width: 250px;
-      height: 250px;
-      object-fit: contain;
-      transition: transform 0.3s ease;
-      pointer-events: auto;
-    }
-
-    /* 👻 Fantasma */
-    #mascara {
-      width: 90px;
-      cursor: pointer;
-      transition: transform 0.3s ease-in-out;
-    }
-
-    #mascara:hover {
-      transform: scale(1.1);
-    }
-
-    @keyframes scareRight {
-      0% { transform: translateX(0) scale(1); }
-      50% { transform: translateX(-120px) scale(1.2); }
-      100% { transform: translateX(0) scale(1); }
-    }
-
-    @keyframes saltar {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-15px); }
-    }
-
-    @keyframes temblar {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
-    }
-
-    @keyframes vibrar {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(3deg); }
-      75% { transform: rotate(-3deg); }
-    }
-
-    #emocionTexto {
-      margin-top: 20px;
-      font-size: 1.3em;
-      color: #2a7f7f;
-      text-align: center;
-      text-transform: capitalize;
-    }
-
-    /* 🔹 Botón centrado */
-    .boton-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-      margin-bottom: 30px;
-    }
-
-    .volver {
-      background-color: #4ac7b7;
-      padding: 12px 24px;
-      font-size: 1em;
-      border: none;
-      border-radius: 10px;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-    }
-
-    .volver:hover {
-      background-color: #3bb09f;
-      transform: scale(1.05);
-    }
-
-    /* 💖 Corazones */
-    .heart {
-      position: absolute;
-      font-size: 20px;
-      color: #ff6b81;
-      animation: flotar 1.5s ease-out forwards;
-      opacity: 0.8;
-    }
-
-    @keyframes flotar {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eco Emociones · Juega con Eco</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/eco.css') }}">
 </head>
 <body>
-  <h1>😺 Interactúa con tu Mascota</h1>
+  <div class="contenedor">
 
-  <div class="interaccion">
-    <div class="tutorial">
-      <h3>Cómo interactuar 🕹️</h3>
-      <ul>
-        <li>👆 Tres clics rápidos: lo hace enojar 😠</li>
-        <li>✋ Click prolongado: lo acaricias y se pone feliz 💖</li>
-        <li>👻 Usa el fantasma para asustarlo 😱</li>
-        <li>😢 Sin interacción: se pone triste</li>
-        <li>😮 Acerca el mouse para sorprenderlo 😮</li>
-      </ul>
-    </div>
+    <!-- Encabezado común de los juegos -->
+    <header class="encabezado-juego">
+      <div class="encabezado-lado">
+        <a class="btn-volver" href="/">
+          <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+          Volver al inicio
+        </a>
+      </div>
+      <h1>Juega con Eco</h1>
+      <div class="encabezado-lado encabezado-derecha"></div>
+    </header>
 
-    <div id="mascota-container">
-      <img id="mascota" src="{{ url_for('static', filename='mascota/triste.png') }}" alt="Mascota">
-    </div>
+    <main class="contenido">
+      <div class="fila">
 
-    <svg id="mascara" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-      <path d="M32 4
-               c-10 0 -18 8 -18 18
-               v25
-               c0 5 2 8 4 10
-               c2-2 4-3 6-3
-               s4 1 6 3
-               s4-3 6-3
-               s4 1 6 3
-               c2-2 4-5 4-10
-               V22
-               c0-10-8-18-18-18z"
-            fill="#fff"
-            stroke="#ccc"
-            stroke-width="2"/>
-      <circle cx="24" cy="26" r="4" fill="#000"/>
-      <circle cx="40" cy="26" r="4" fill="#000"/>
-      <path d="M24 38 q8 6 16 0" stroke="#000" stroke-width="2" fill="none"/>
-    </svg>
-  </div>
+        <!-- Cómo jugar -->
+        <section class="tarjeta como-jugar" aria-labelledby="titulo-como-jugar">
+          <h2 id="titulo-como-jugar">Cómo jugar</h2>
+          <ul class="pasos">
+            <li class="paso" data-emocion="feliz">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11" />
+                <path d="M11 10.5V4a1.5 1.5 0 0 1 3 0v7" />
+                <path d="M14 10.5V5.5a1.5 1.5 0 0 1 3 0V14c0 4-2.7 7-6.5 7-2.8 0-4.6-1.5-5.8-3.8L3 13.6a1.5 1.5 0 0 1 2.6-1.5L8 15" />
+              </svg>
+              <span class="paso-texto">Mantén presionado sobre Eco para acariciarlo</span>
+              <span class="pastilla-emocion fondo-feliz">Feliz</span>
+            </li>
+            <li class="paso" data-emocion="enojado">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+              </svg>
+              <span class="paso-texto">Toca a Eco tres veces seguidas</span>
+              <span class="pastilla-emocion fondo-enojado">Enojado</span>
+            </li>
+            <li class="paso" data-emocion="sorprendido">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 3l14 7.5-6.2 1.7L10 18.5z" />
+                <path d="M13 13l5 5" />
+              </svg>
+              <span class="paso-texto">Acerca el puntero a Eco</span>
+              <span class="pastilla-emocion fondo-sorprendido">Sorprendido</span>
+            </li>
+            <li class="paso" data-emocion="asustado">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 20V10a7 7 0 0 1 14 0v10l-2.3-1.8-2.4 1.8-2.3-1.8-2.3 1.8-2.4-1.8z" />
+                <circle cx="9.5" cy="10.5" r=".8" />
+                <circle cx="14.5" cy="10.5" r=".8" />
+              </svg>
+              <span class="paso-texto">Toca el fantasma</span>
+              <span class="pastilla-emocion fondo-asustado">Asustado</span>
+            </li>
+            <li class="paso activa" data-emocion="triste">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              <span class="paso-texto">Si nadie juega con él un rato</span>
+              <span class="pastilla-emocion fondo-triste">Triste</span>
+            </li>
+          </ul>
+        </section>
 
-  <div id="emocionTexto">Estado actual: triste</div>
+        <!-- Escenario de juego -->
+        <div class="zona-juego">
+          <div id="mascota-container">
+            <img id="mascota" src="{{ url_for('static', filename='mascota/triste.png') }}" alt="Eco con cara de triste" draggable="false">
 
-  <div class="boton-container">
-    <button class="volver" onclick="window.location.href='/'">🏠 Volver al inicio</button>
+            <button id="mascara" type="button" aria-label="Asustar a Eco con el fantasma">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 20V10a7 7 0 0 1 14 0v10l-2.3-1.8-2.4 1.8-2.3-1.8-2.3 1.8-2.4-1.8z" />
+                <circle cx="9.5" cy="10.5" r=".8" />
+                <circle cx="14.5" cy="10.5" r=".8" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="tarjeta estado-eco" aria-live="polite">
+            <span class="estado-eco-etiqueta">Eco está</span>
+            <span id="emocionTexto" class="titulo-emocion">triste</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="consejo">Para el acompañante: antes de leer el nombre, pregúntale a tu hijo cómo cree que se siente Eco.</p>
+    </main>
   </div>
 
   <script>
@@ -222,6 +107,10 @@
     const contenedor = document.getElementById("mascota-container");
     const emocionTexto = document.getElementById("emocionTexto");
     const mascara = document.getElementById("mascara");
+
+    // Ruta de las imágenes de Eco y filas de "Cómo jugar"
+    const RUTA_MASCOTA = "{{ url_for('static', filename='mascota/') }}";
+    const pasos = document.querySelectorAll(".paso");
 
     let estadoActual = "triste";
     let ultimoClick = 0;
@@ -232,11 +121,11 @@
     let ultimoEnojo = 0;
 
     const emociones = {
-      feliz:      { img: "feliz.png", color: "#ffef9f", anim: "saltar 0.5s ease" },
-      triste:     { img: "triste.png", color: "#b3d1ff", anim: "none" },
-      enojado:    { img: "enojado.png", color: "#ffb3b3", anim: "vibrar 0.5s ease" },
-      sorprendido:{ img: "sorprendido.png", color: "#ffe6b3", anim: "temblar 0.5s ease" },
-      asustado:   { img: "asustado.png", color: "#ffd1e6", anim: "temblar 0.5s ease" }
+      feliz:      { img: "feliz.png", color: "var(--feliz)", anim: "saltar 0.5s ease" },
+      triste:     { img: "triste.png", color: "var(--triste)", anim: "none" },
+      enojado:    { img: "enojado.png", color: "var(--enojado)", anim: "vibrar 0.5s ease" },
+      sorprendido:{ img: "sorprendido.png", color: "var(--sorprendido)", anim: "temblar 0.5s ease" },
+      asustado:   { img: "asustado.png", color: "var(--asustado)", anim: "temblar 0.5s ease" }
     };
 
     function cambiarEmocion(nueva, duracion = 2500) {
@@ -245,9 +134,12 @@
       if (!emocion) return;
 
       estadoActual = nueva;
-      mascota.src = `/static/mascota/${emocion.img}`;
+      mascota.src = RUTA_MASCOTA + emocion.img;
+      mascota.alt = `Eco con cara de ${nueva}`;
       contenedor.style.backgroundColor = emocion.color;
-      emocionTexto.innerText = `Estado actual: ${nueva}`;
+      emocionTexto.innerText = nueva;
+      // Marcar la fila de "Cómo jugar" de la emoción actual
+      pasos.forEach(paso => paso.classList.toggle("activa", paso.dataset.emocion === nueva));
       mascota.style.animation = "none";
       void mascota.offsetWidth;
       mascota.style.animation = emocion.anim;
@@ -264,7 +156,8 @@
     function crearCorazon(x, y) {
       const corazon = document.createElement("div");
       corazon.classList.add("heart");
-      corazon.textContent = "💖";
+      // Corazón en SVG (color pastel definido en eco.css)
+      corazon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
       corazon.style.left = `${x - 10}px`;
       corazon.style.top = `${y - 10}px`;
       contenedor.appendChild(corazon);

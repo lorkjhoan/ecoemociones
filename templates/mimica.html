@@ -2,92 +2,120 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>EcoEmociones - Mímica</title>
-  <style>
-    body {
-      background-color: #e7f8f2;
-      font-family: "Comic Sans MS", sans-serif;
-      text-align: center;
-      margin: 0;
-      overflow: hidden;
-    }
-
-    h1 {
-      margin-top: 10px;
-      color: #2b7a78;
-    }
-
-    #video-container {
-      position: relative;
-      display: inline-block;
-      margin-top: 20px;
-    }
-
-    video {
-      width: 850px;   /* Más ancho */
-      height: 380px;  /* Mantener altura */
-      border-radius: 15px;
-      border: 4px solid #3aafa9;
-      background: #fff;
-    }
-
-    #emotion {
-      font-size: 1.4em;
-      margin-top: 20px;
-      color: #17252a;
-    }
-
-    #mascota {
-      position: absolute;
-      bottom: 10px;            /* Parte inferior del video */
-      left: 50%;               /* Centrado horizontal */
-      transform: translateX(-50%);
-      width: 130px;             /* Mascota más grande */
-      height: 130px;
-      transition: transform 0.5s ease-in-out;
-      pointer-events: none;
-    }
-
-    button {
-      background-color: #3aafa9;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      margin-top: 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1em;
-    }
-
-    button:hover {
-      background-color: #2b7a78;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eco Emociones · Mímica emocional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/eco.css') }}" />
 </head>
 <body>
-  <h1>EcoEmociones 🐾 - Mímica</h1>
+  <div class="contenedor">
 
-  <div id="video-container">
-    <video id="video" autoplay></video>
-    <!-- Mascota centrada en la parte inferior del video -->
-    <img id="mascota" src="/static/mascota/feliz.png" alt="Mascota" />
+    <!-- Encabezado común de los juegos -->
+    <header class="encabezado-juego">
+      <div class="encabezado-lado">
+        <a class="btn-volver" href="/">
+          <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+          Volver al inicio
+        </a>
+      </div>
+      <h1>Mímica emocional</h1>
+      <div class="encabezado-lado encabezado-derecha">
+        <span class="nota-privacidad">
+          <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+          Las imágenes no se guardan
+        </span>
+      </div>
+    </header>
+
+    <main class="contenido">
+      <div class="fila">
+
+        <!-- Cámara -->
+        <div class="camara-columna">
+          <div class="camara">
+            <video id="video" autoplay playsinline muted aria-label="Vista de la cámara"></video>
+            <!-- Óvalo guía para ubicar la cara -->
+            <svg class="guia-ovalo" viewBox="0 0 220 280" aria-hidden="true">
+              <ellipse cx="110" cy="140" rx="106" ry="136" fill="none" stroke="#B9A891" stroke-width="4" stroke-dasharray="10 10" />
+            </svg>
+            <p class="camara-aviso">Ubica la cara dentro del óvalo</p>
+          </div>
+          <p class="nota-acompanante">Para el acompañante: busquen un lugar con buena luz y siéntense de frente a la cámara.</p>
+        </div>
+
+        <!-- Eco y resultado -->
+        <div class="tarjeta panel-eco">
+          <div id="escenario">
+            <img id="mascota" src="{{ url_for('static', filename='mascota/feliz.png') }}" alt="Eco con cara de feliz" />
+          </div>
+
+          <div class="estado" aria-live="polite">
+            <p id="emotion-titulo" class="titulo-emocion">Buscando tu cara…</p>
+            <p id="emotion">Mírense de frente a la cámara.</p>
+          </div>
+
+          <div id="confianza" hidden>
+            <div class="barra" aria-hidden="true"><div id="confianza-relleno"></div></div>
+            <p id="confianza-texto">Seguridad del reconocimiento: 0 %</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Las cinco emociones -->
+      <section class="seccion" aria-labelledby="titulo-chips">
+        <h2 id="titulo-chips" class="titulo-chips">Las emociones de Eco</h2>
+        <ul class="chips">
+          <li class="chip-emocion" data-emocion="feliz">
+            <span class="circulo-emocion fondo-feliz"><img src="{{ url_for('static', filename='mascota/feliz.png') }}" alt="" /></span>
+            Feliz
+          </li>
+          <li class="chip-emocion" data-emocion="triste">
+            <span class="circulo-emocion fondo-triste"><img src="{{ url_for('static', filename='mascota/triste.png') }}" alt="" /></span>
+            Triste
+          </li>
+          <li class="chip-emocion" data-emocion="enojado">
+            <span class="circulo-emocion fondo-enojado"><img src="{{ url_for('static', filename='mascota/enojado.png') }}" alt="" /></span>
+            Enojado
+          </li>
+          <li class="chip-emocion" data-emocion="sorprendido">
+            <span class="circulo-emocion fondo-sorprendido"><img src="{{ url_for('static', filename='mascota/sorprendido.png') }}" alt="" /></span>
+            Sorprendido
+          </li>
+          <li class="chip-emocion" data-emocion="asustado">
+            <span class="circulo-emocion fondo-asustado"><img src="{{ url_for('static', filename='mascota/asustado.png') }}" alt="" /></span>
+            Asustado
+          </li>
+        </ul>
+      </section>
+
+      <p class="consejo">Cuando Eco cambie de cara, nombren juntos la emoción y pregúntale a tu hijo cuándo se ha sentido así.</p>
+    </main>
   </div>
-
-  <p id="emotion">Detectando emoción...</p>
-
-  <button onclick="window.location.href='/'">Volver al inicio</button>
 
   <script>
     const video = document.getElementById('video');
     const emotionText = document.getElementById('emotion');
     const mascotaImg = document.getElementById('mascota');
 
+    // Elementos de la interfaz que muestran el resultado
+    const emotionTitulo = document.getElementById('emotion-titulo');
+    const escenario = document.getElementById('escenario');
+    const confianza = document.getElementById('confianza');
+    const confianzaRelleno = document.getElementById('confianza-relleno');
+    const confianzaTexto = document.getElementById('confianza-texto');
+    const chips = document.querySelectorAll('.chip-emocion');
+
     const emocionesMascota = {
-      feliz: '/static/mascota/feliz.png',
-      triste: '/static/mascota/triste.png',
-      enojado: '/static/mascota/enojado.png',
-      sorprendido: '/static/mascota/sorprendido.png',
-      asustado: '/static/mascota/asustado.png'
+      feliz: "{{ url_for('static', filename='mascota/feliz.png') }}",
+      triste: "{{ url_for('static', filename='mascota/triste.png') }}",
+      enojado: "{{ url_for('static', filename='mascota/enojado.png') }}",
+      sorprendido: "{{ url_for('static', filename='mascota/sorprendido.png') }}",
+      asustado: "{{ url_for('static', filename='mascota/asustado.png') }}"
     };
 
     // Tiempo de espera entre una predicción y la siguiente (en milisegundos)
@@ -117,6 +145,35 @@
         if (conteo[lista[i]] === maximo) return lista[i];
       }
       return null;
+    }
+
+    // === AYUDAS DE INTERFAZ ===
+
+    // Cambia el texto solo si es distinto, para que el lector de pantalla
+    // no repita el mismo mensaje cada 1,5 segundos
+    function ponerTexto(elemento, texto) {
+      if (elemento.textContent !== texto) elemento.textContent = texto;
+    }
+
+    // "feliz" → "Feliz"
+    function capitalizar(texto) {
+      return texto.charAt(0).toUpperCase() + texto.slice(1);
+    }
+
+    // Marca el chip de la emoción indicada (null = ninguno)
+    function marcarChip(emocion) {
+      chips.forEach(chip => chip.classList.toggle('activo', chip.dataset.emocion === emocion));
+    }
+
+    // Muestra la barra de seguridad con el porcentaje (null = ocultarla)
+    function mostrarConfianza(porcentaje) {
+      if (porcentaje === null) {
+        confianza.hidden = true;
+        return;
+      }
+      confianza.hidden = false;
+      confianzaRelleno.style.width = `${porcentaje}%`;
+      ponerTexto(confianzaTexto, `Seguridad del reconocimiento: ${porcentaje} %`);
     }
 
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
@@ -153,13 +210,19 @@
         // Sin rostro: la persona se fue o tapó la cámara, se reinicia el historial
         if (result.status === "sin_rostro") {
           historial = [];
-          emotionText.innerText = "No veo tu cara 👀 Acércate a la cámara";
+          ponerTexto(emotionTitulo, "No veo tu cara");
+          ponerTexto(emotionText, "Acércate un poco a la cámara.");
+          mostrarConfianza(null);
+          marcarChip(null);
+          escenario.style.backgroundColor = "var(--escenario)";
           return;
         }
 
         // Resultado dudoso: pedir un gesto más claro, sin tocar el historial ni la mascota
         if (result.status === "dudoso") {
-          emotionText.innerText = "Mmm... no estoy seguro 🤔 Exagera un poco más el gesto";
+          ponerTexto(emotionTitulo, "Mmm… no estoy seguro");
+          ponerTexto(emotionText, "Prueba hacer el gesto un poco más grande.");
+          mostrarConfianza(null);
           return;
         }
 
@@ -173,17 +236,24 @@
         // Mostrar la emoción más frecuente, con el porcentaje de la predicción actual
         const emocionSuavizada = emocionMasFrecuente(historial);
         const porcentaje = Math.round(result.confidence * 100);
+        ponerTexto(emotionTitulo, capitalizar(emocionSuavizada));
+        ponerTexto(emotionText, "Eco hace la misma cara que tú.");
+
         // Mostrar el porcentaje solo si corresponde a la emoción que se está mostrando
-        emotionText.innerText = emotion === emocionSuavizada
-          ? `Emoción detectada: ${emocionSuavizada} (${porcentaje}%)`
-          : `Emoción detectada: ${emocionSuavizada}`;
+        mostrarConfianza(emotion === emocionSuavizada ? porcentaje : null);
+
+        // Color del escenario y chip de la emoción mostrada
+        escenario.style.backgroundColor = `var(--${emocionSuavizada})`;
+        marcarChip(emocionSuavizada);
 
         // Cambiar la mascota solo si la emoción es distinta a la que ya muestra
         if (emocionSuavizada !== emocionMostrada && emocionesMascota[emocionSuavizada]) {
           emocionMostrada = emocionSuavizada;
           mascotaImg.src = emocionesMascota[emocionSuavizada];
-          mascotaImg.style.transform = "translateX(-50%) scale(1.05)";
-          setTimeout(() => mascotaImg.style.transform = "translateX(-50%) scale(1)", 300);
+          mascotaImg.alt = `Eco con cara de ${emocionSuavizada}`;
+          // Cambio suave de tamaño, de bajo impacto sensorial
+          mascotaImg.style.transform = "scale(1.03)";
+          setTimeout(() => mascotaImg.style.transform = "scale(1)", 300);
         }
       } catch (error) {
         console.error("Error en la predicción:", error);

@@ -1,0 +1,783 @@
+/* =========================================================
+   ECO EMOCIONES · ESTILOS COMPARTIDOS
+   Bajo impacto sensorial: colores pastel, movimientos suaves.
+   ========================================================= */
+
+/* === VARIABLES === */
+:root {
+  --fondo: #FBF7F1;
+  --superficie: #FFFFFF;
+  --arena: #F3EADD;
+  --borde: #E6DACA;
+  --tinta: #3A2F27;
+  --tinta-suave: #5B4E42;
+  --tinta-tenue: #6B5D50;
+  --acento: #2F6F6B;
+  --acento-hover: #24524F;
+  --escenario: #F1E8DA;
+
+  /* Colores por emoción */
+  --feliz: #F7E4A8;
+  --triste: #CFE0F2;
+  --enojado: #F4CFC4;
+  --sorprendido: #E4D9F2;
+  --asustado: #D6E8DC;
+  --corazon: #E7A9B8;
+}
+
+/* === BASE === */
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, .titulo-emocion {
+  margin: 0;
+  font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+p { margin: 0; }
+
+img { display: block; max-width: 100%; }
+
+/* Iconos SVG de trazo */
+.icono {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Foco visible para teclado */
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 4px;
+}
+
+/* Fondos por emoción */
+.fondo-feliz { background-color: var(--feliz); }
+.fondo-triste { background-color: var(--triste); }
+.fondo-enojado { background-color: var(--enojado); }
+.fondo-sorprendido { background-color: var(--sorprendido); }
+.fondo-asustado { background-color: var(--asustado); }
+
+/* === ESTRUCTURA === */
+.contenedor {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Contenido principal de la página de inicio */
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.fila > * { min-width: 0; }
+
+.tarjeta {
+  background: var(--superficie);
+  border: 2px solid var(--borde);
+  border-radius: 28px;
+  padding: 26px;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* === COMPONENTES COMUNES === */
+.btn-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--arena);
+  color: var(--tinta);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 17px;
+  transition: background-color .2s ease;
+}
+
+.btn-volver:hover { background: #E9DFD0; }
+
+.btn-volver .icono { width: 20px; height: 20px; }
+
+.pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--arena);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.consejo {
+  background: var(--arena);
+  border-radius: 18px;
+  padding: 16px 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #4A3E34;
+}
+
+.circulo-emocion {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.circulo-emocion img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+/* === ENCABEZADO DE LOS JUEGOS === */
+.encabezado-juego {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.encabezado-juego h1 {
+  font-size: 32px;
+  text-align: center;
+}
+
+/* Los lados ocupan lo mismo para que el título quede centrado */
+.encabezado-lado {
+  flex: 1 1 0;
+  display: flex;
+}
+
+.encabezado-derecha { justify-content: flex-end; }
+
+.nota-privacidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--tinta-suave);
+}
+
+/* =========================================================
+   INICIO (index.html)
+   ========================================================= */
+.encabezado-inicio {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+}
+
+.logo-circulo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--feliz);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.logo-circulo img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 40px;
+}
+
+.hero > * { min-width: 0; }
+
+.hero-texto {
+  flex: 1 1 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.antetitulo {
+  color: var(--acento);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.hero h1 { font-size: 48px; }
+
+.hero-intro {
+  max-width: 34em;
+  font-size: 19px;
+  color: var(--tinta-suave);
+}
+
+.pictogramas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pictograma {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hero-imagen {
+  flex: 0 1 320px;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-circulo {
+  width: min(320px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--feliz);
+  display: grid;
+  place-items: center;
+}
+
+.hero-circulo img {
+  width: 94%;
+  height: auto;
+}
+
+.seccion h2 { font-size: 26px; }
+
+.juegos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+/* Tarjetas de juego: el enlace completo es la tarjeta */
+.tarjeta-juego {
+  flex: 1 1 380px;
+  min-width: 0;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: var(--tinta);
+  text-decoration: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.tarjeta-juego:hover {
+  border-color: var(--acento);
+  box-shadow: 0 8px 24px rgba(58, 47, 39, .08);
+}
+
+.juego-imagen {
+  flex: none;
+  width: 132px;
+  height: 132px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.juego-imagen img {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+}
+
+.juego-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.juego-texto h3 { font-size: 28px; }
+
+.juego-desc {
+  font-size: 17px;
+  color: var(--tinta-suave);
+}
+
+.juego-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--acento);
+  font-weight: 700;
+}
+
+.franja-consejos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--arena);
+}
+
+.consejo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.consejo-item .icono {
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  color: var(--acento);
+}
+
+.consejo-item h3 {
+  margin-bottom: 4px;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.consejo-item p {
+  font-size: 15px;
+  color: #4A3E34;
+}
+
+/* =========================================================
+   MÍMICA EMOCIONAL (mimica.html)
+   ========================================================= */
+.camara-columna {
+  flex: 1 1 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.camara {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 2px solid var(--borde);
+  background: #EDE4D6;
+}
+
+.camara video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Óvalo guía para ubicar la cara */
+.guia-ovalo {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  height: 72%;
+  max-height: 280px;
+  aspect-ratio: 220 / 280;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.camara-aviso {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .88);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.nota-acompanante {
+  font-size: 15px;
+  color: var(--tinta-suave);
+}
+
+.panel-eco {
+  flex: 1 1 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+
+#escenario {
+  width: 240px;
+  height: 240px;
+  max-width: 100%;
+  border-radius: 50%;
+  background-color: var(--escenario);
+  display: grid;
+  place-items: center;
+  transition: background-color .6s ease;
+}
+
+.panel-eco #mascota {
+  width: 230px;
+  height: 230px;
+  object-fit: contain;
+  transition: transform .3s ease;
+}
+
+.estado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#emotion-titulo { font-size: 34px; }
+
+#emotion {
+  font-size: 18px;
+  color: var(--tinta-suave);
+}
+
+#confianza {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.barra {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--arena);
+}
+
+#confianza-relleno {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--acento);
+  transition: width .4s ease;
+}
+
+#confianza-texto {
+  font-size: 14px;
+  color: var(--tinta-tenue);
+}
+
+.seccion h2.titulo-chips { font-size: 22px; }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip-emocion {
+  flex: 1 1 160px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 3px solid var(--borde);
+  background: var(--superficie);
+  font-size: 17px;
+  font-weight: 700;
+  transition: background-color .6s ease, border-color .6s ease;
+}
+
+.chip-emocion .circulo-emocion {
+  width: 52px;
+  height: 52px;
+}
+
+/* Chip de la emoción que Eco está mostrando */
+.chip-emocion.activo { border-color: var(--acento); }
+.chip-emocion.activo[data-emocion="feliz"] { background: var(--feliz); }
+.chip-emocion.activo[data-emocion="triste"] { background: var(--triste); }
+.chip-emocion.activo[data-emocion="enojado"] { background: var(--enojado); }
+.chip-emocion.activo[data-emocion="sorprendido"] { background: var(--sorprendido); }
+.chip-emocion.activo[data-emocion="asustado"] { background: var(--asustado); }
+
+/* =========================================================
+   JUEGA CON ECO (interactuar.html)
+   ========================================================= */
+.como-jugar {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.como-jugar h2 { font-size: 24px; }
+
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 2px solid transparent;
+  font-size: 16px;
+  transition: background-color .3s ease, border-color .3s ease;
+}
+
+.paso .icono {
+  width: 30px;
+  height: 30px;
+  color: var(--acento);
+}
+
+.paso-texto { flex: 1; }
+
+/* Fila de la emoción actual */
+.paso.activa {
+  background: var(--fondo);
+  border-color: var(--acento);
+}
+
+.pastilla-emocion {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.zona-juego {
+  flex: 2 1 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#mascota-container {
+  position: relative;
+  min-height: 460px;
+  overflow: hidden;
+  border-radius: 28px;
+  background-color: var(--triste);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color .6s ease;
+}
+
+.zona-juego #mascota {
+  width: min(320px, 80%);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  cursor: pointer;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+/* Botón del fantasma */
+#mascara {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--tinta);
+  cursor: pointer;
+  transition: border-color .2s ease;
+}
+
+#mascara:hover { border-color: var(--acento); }
+
+#mascara .icono {
+  width: 48px;
+  height: 48px;
+}
+
+.estado-eco {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.estado-eco-etiqueta {
+  font-size: 20px;
+  color: var(--tinta-suave);
+}
+
+#emocionTexto { font-size: 30px; }
+
+/* Corazones al acariciar */
+.heart {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  color: var(--corazon);
+  pointer-events: none;
+  animation: flotar 1.5s ease-out forwards;
+}
+
+.heart svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* === ANIMACIONES SUAVES === */
+@keyframes saltar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes temblar {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes vibrar {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(1.5deg); }
+  75% { transform: rotate(-1.5deg); }
+}
+
+@keyframes scareRight {
+  0%, 100% { transform: translateX(0) scale(1); }
+  50% { transform: translateX(-40px) scale(1.08); }
+}
+
+@keyframes flotar {
+  0% { transform: translateY(0) scale(1); opacity: .9; }
+  100% { transform: translateY(-70px) scale(1.2); opacity: 0; }
+}
+
+/* === MOVIMIENTO REDUCIDO === */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* === PANTALLAS PEQUEÑAS: todo en una columna === */
+@media (max-width: 719px) {
+  .contenedor {
+    padding: 0 16px 32px;
+    gap: 28px;
+  }
+
+  .fila > *,
+  .hero > *,
+  .juegos > * { flex-basis: 100%; }
+
+  .encabezado-juego { justify-content: center; }
+
+  .encabezado-lado {
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  .encabezado-lado:empty { display: none; }
+
+  .hero h1 { font-size: 36px; }
+
+  .tarjeta-juego {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .tarjeta-juego .juego-texto { align-items: center; }
+
+  .chip-emocion { flex-basis: calc(50% - 8px); }
+
+  #mascota-container { min-height: 360px; }
+}
