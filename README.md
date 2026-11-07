@@ -66,7 +66,7 @@ Navegador (cámara)  ──►  POST /predict (imagen en base64)
 ecoemociones/
 ├── app.py                 # Servidor Flask: rutas, preprocesamiento y predicción
 ├── requirements.txt       # Dependencias de Python
-├── modelo/                # (no incluido en el repo) modelo_affectnet_v1.h5
+├── modelo/                # modelo_affectnet_v1.h5 (descargar desde Releases)
 ├── static/
 │   └── mascota/           # Imágenes de la mascota por emoción
 │       ├── asustado.png
