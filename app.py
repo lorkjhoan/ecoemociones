@@ -83,7 +83,6 @@ def predict():
 
     # === PREDICCIÓN ===
     probs = model.predict(img, verbose=0)[0]
-    print(probs, probs.sum())  # TEMPORAL: revisar probabilidades
 
     idx = int(np.argmax(probs))
     confidence = float(probs[idx])
