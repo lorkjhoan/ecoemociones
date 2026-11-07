@@ -90,23 +90,57 @@
       asustado: '/static/mascota/asustado.png'
     };
 
+    // Tiempo de espera entre una predicción y la siguiente (en milisegundos)
+    const INTERVALO_MS = 1500;
+
+    // Cantidad de predicciones recientes que se usan para suavizar el resultado
+    const VENTANA = 5;
+
+    // Últimas emociones detectadas con status "ok" (la más reciente va al final)
+    let historial = [];
+
+    // Emoción que la mascota está mostrando en este momento
+    // (empieza en "feliz" porque esa es la imagen inicial del HTML)
+    let emocionMostrada = 'feliz';
+
+    // Devuelve la emoción que más se repite en la lista.
+    // Si hay empate, gana la más reciente entre las empatadas.
+    function emocionMasFrecuente(lista) {
+      const conteo = {};
+      for (const e of lista) {
+        conteo[e] = (conteo[e] || 0) + 1;
+      }
+      const maximo = Math.max(...Object.values(conteo));
+
+      // Recorrer desde el final: la primera con el conteo máximo es la más reciente
+      for (let i = lista.length - 1; i >= 0; i--) {
+        if (conteo[lista[i]] === maximo) return lista[i];
+      }
+      return null;
+    }
+
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
       video.srcObject = stream;
     });
 
-    setInterval(async () => {
+    // Ciclo de predicción: la siguiente petición se programa solo cuando
+    // termina la anterior, así nunca se acumulan peticiones al servidor
+    async function ciclo() {
       // No enviar imágenes mientras la cámara aún no carga
-      if (!video.videoWidth) return;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg');
-      const base64Data = dataUrl.split(',')[1];
+      if (!video.videoWidth) {
+        setTimeout(ciclo, INTERVALO_MS);
+        return;
+      }
 
       try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        const base64Data = dataUrl.split(',')[1];
+
         const res = await fetch('/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -116,13 +150,14 @@
         const result = await res.json();
         const emotion = result.emotion;
 
-        // Sin rostro: avisar al usuario y no cambiar la mascota
+        // Sin rostro: la persona se fue o tapó la cámara, se reinicia el historial
         if (result.status === "sin_rostro") {
+          historial = [];
           emotionText.innerText = "No veo tu cara 👀 Acércate a la cámara";
           return;
         }
 
-        // Resultado dudoso: pedir un gesto más claro y no cambiar la mascota
+        // Resultado dudoso: pedir un gesto más claro, sin tocar el historial ni la mascota
         if (result.status === "dudoso") {
           emotionText.innerText = "Mmm... no estoy seguro 🤔 Exagera un poco más el gesto";
           return;
@@ -131,18 +166,32 @@
         // Cualquier otra respuesta (por ejemplo, un error): no hacer nada
         if (result.status !== "ok") return;
 
-        const porcentaje = Math.round(result.confidence * 100);
-        emotionText.innerText = `Emoción detectada: ${emotion} (${porcentaje}%)`;
+        // Guardar la emoción y conservar solo las últimas VENTANA
+        historial.push(emotion);
+        if (historial.length > VENTANA) historial.shift();
 
-        if (emocionesMascota[emotion]) {
-          mascotaImg.src = emocionesMascota[emotion];
+        // Mostrar la emoción más frecuente, con el porcentaje de la predicción actual
+        const emocionSuavizada = emocionMasFrecuente(historial);
+        const porcentaje = Math.round(result.confidence * 100);
+        emotionText.innerText = `Emoción detectada: ${emocionSuavizada} (${porcentaje}%)`;
+
+        // Cambiar la mascota solo si la emoción es distinta a la que ya muestra
+        if (emocionSuavizada !== emocionMostrada && emocionesMascota[emocionSuavizada]) {
+          emocionMostrada = emocionSuavizada;
+          mascotaImg.src = emocionesMascota[emocionSuavizada];
           mascotaImg.style.transform = "translateX(-50%) scale(1.05)";
           setTimeout(() => mascotaImg.style.transform = "translateX(-50%) scale(1)", 300);
         }
       } catch (error) {
         console.error("Error en la predicción:", error);
+      } finally {
+        // Programar la siguiente ejecución cuando esta haya terminado
+        setTimeout(ciclo, INTERVALO_MS);
       }
-    }, 1500);
+    }
+
+    // Arrancar el ciclo una sola vez
+    ciclo();
   </script>
 </body>
 </html>
