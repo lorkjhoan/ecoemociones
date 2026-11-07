@@ -95,6 +95,9 @@
     });
 
     setInterval(async () => {
+      // No enviar imágenes mientras la cámara aún no carga
+      if (!video.videoWidth) return;
+
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -113,7 +116,23 @@
         const result = await res.json();
         const emotion = result.emotion;
 
-        emotionText.innerText = "Emoción detectada: " + emotion;
+        // Sin rostro: avisar al usuario y no cambiar la mascota
+        if (result.status === "sin_rostro") {
+          emotionText.innerText = "No veo tu cara 👀 Acércate a la cámara";
+          return;
+        }
+
+        // Resultado dudoso: pedir un gesto más claro y no cambiar la mascota
+        if (result.status === "dudoso") {
+          emotionText.innerText = "Mmm... no estoy seguro 🤔 Exagera un poco más el gesto";
+          return;
+        }
+
+        // Cualquier otra respuesta (por ejemplo, un error): no hacer nada
+        if (result.status !== "ok") return;
+
+        const porcentaje = Math.round(result.confidence * 100);
+        emotionText.innerText = `Emoción detectada: ${emotion} (${porcentaje}%)`;
 
         if (emocionesMascota[emotion]) {
           mascotaImg.src = emocionesMascota[emotion];

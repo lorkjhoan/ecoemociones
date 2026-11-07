@@ -14,6 +14,10 @@ model = load_model(model_path)
 # === ETIQUETAS DEL MODELO ===
 class_names = ['asustado', 'enojado', 'feliz', 'sorprendido', 'triste']
 
+# === UMBRAL DE CONFIANZA ===
+# Si el modelo está menos seguro que esto, no cambiamos la mascota
+UMBRAL_CONFIANZA = 0.50
+
 # === CLASIFICADOR DE ROSTROS ===
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
@@ -27,12 +31,14 @@ def preprocess_frame(frame_bytes):
     gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
 
+    # Si no hay rostros, no se predice nada
+    if len(faces) == 0:
+        return None
+
     # Si hay rostros, usar el más grande
-    if len(faces) > 0:
-        largest_face = max(faces, key=lambda f: f[2] * f[3])
-        (x, y, w, h) = largest_face
-        img_np = img_np[y:y+h, x:x+w]
-    # Si no hay rostros, usa la imagen completa
+    largest_face = max(faces, key=lambda f: f[2] * f[3])
+    (x, y, w, h) = largest_face
+    img_np = img_np[y:y+h, x:x+w]
 
     # Redimensionar y normalizar
     img_resized = Image.fromarray(img_np).resize((100, 100))
@@ -59,16 +65,35 @@ def interactuar():
 # === ENDPOINT DE PREDICCIÓN ===
 @app.route("/predict", methods=["POST"])
 def predict():
-    # Decodificar imagen
-    data = request.json
-    img_data = base64.b64decode(data["image"])
-    img = preprocess_frame(img_data)
+    # === VALIDAR DATOS RECIBIDOS ===
+    data = request.get_json(silent=True)
+    if not data or not data.get("image"):
+        return jsonify({"error": "No se recibió ninguna imagen"}), 400
 
-    # Hacer predicción directa
-    pred = model.predict(img)
-    emotion = class_names[np.argmax(pred)]
+    # === DECODIFICAR Y PREPROCESAR IMAGEN ===
+    try:
+        img_data = base64.b64decode(data["image"])
+        img = preprocess_frame(img_data)
+    except Exception:
+        return jsonify({"error": "La imagen no es válida"}), 400
 
-    return jsonify({"emotion": emotion})
+    # === SIN ROSTRO DETECTADO ===
+    if img is None:
+        return jsonify({"status": "sin_rostro"})
+
+    # === PREDICCIÓN ===
+    probs = model.predict(img, verbose=0)[0]
+    print(probs, probs.sum())  # TEMPORAL: revisar probabilidades
+
+    idx = int(np.argmax(probs))
+    confidence = float(probs[idx])
+    emotion = class_names[idx]
+
+    # === RESULTADO DUDOSO ===
+    if confidence < UMBRAL_CONFIANZA:
+        return jsonify({"status": "dudoso", "emotion": emotion, "confidence": confidence})
+
+    return jsonify({"status": "ok", "emotion": emotion, "confidence": confidence})
 
 
 # === EJECUCIÓN ===
