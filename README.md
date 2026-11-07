@@ -40,10 +40,11 @@ Navegador (cámara)  ──►  POST /predict (imagen en base64)
           Modelo Keras/TensorFlow (modelo_affectnet_v1.h5)
                               │
                               ▼
-          Respuesta JSON: { "emotion": "feliz" }
+          Respuesta JSON: { "status": "ok", "emotion": "feliz", "confidence": 0.87 }
 ```
 
-- Si no se detecta ningún rostro, se usa la imagen completa.
+- Si no se detecta ningún rostro, no se hace predicción y se responde `{ "status": "sin_rostro" }`; la interfaz le pide al usuario acercarse a la cámara.
+- Si la confianza del modelo es menor al 50 % (`UMBRAL_CONFIANZA` en `app.py`), se responde `"status": "dudoso"` y la mascota no cambia, para evitar resultados erróneos.
 - El modelo clasifica **5 emociones**: `asustado`, `enojado`, `feliz`, `sorprendido` y `triste`.
 - El nombre del modelo indica que fue entrenado a partir del dataset **AffectNet**.
 
@@ -84,9 +85,9 @@ ecoemociones/
 ## 🚀 Instalación y ejecución
 
 ### Requisitos previos
-- Python 3.10 – 3.12 (compatible con TensorFlow 2.20)
+- Python 3.12 (recomendado). TensorFlow 2.20 no es compatible con Python 3.13 ni 3.14.
 - Una cámara web (para el minijuego de mímica)
-- El archivo del modelo `modelo_affectnet_v1.h5`
+- El archivo del modelo `modelo_affectnet_v1.h5` (se descarga desde Releases, ver paso 4).
 
 ### Pasos
 
@@ -98,28 +99,22 @@ ecoemociones/
 
 2. **Crear y activar un entorno virtual**
    ```bash
-   python -m venv venv
    # Windows
-   venv\Scripts\activate
+   py -3.12 -m venv .venv
+   .venv\Scripts\activate
    # Linux / macOS
-   source venv/bin/activate
+   python3.12 -m venv .venv
+   source .venv/bin/activate
    ```
 
 3. **Instalar dependencias**
    ```bash
    pip install -r requirements.txt
    ```
-   Si solo quieres lo indispensable para ejecutar la app:
-   ```bash
-   pip install flask tensorflow opencv-python numpy pillow
-   ```
 
-4. **Agregar el modelo**
+4. **Descargar el modelo**
 
-   Por su tamaño, el modelo no se sube al repositorio (`modelo/*.h5` está en `.gitignore`). Crea la carpeta y coloca el archivo:
-   ```
-   modelo/modelo_affectnet_v1.h5
-   ```
+   El modelo pesa ~104 MB, por encima del límite de 100 MB por archivo de GitHub, así que no está en el repositorio. Descarga `modelo_affectnet_v1.h5` desde la sección [Releases](https://github.com/lorkjhoan/ecoemociones/releases) y colócalo en `modelo/modelo_affectnet_v1.h5` (crea la carpeta `modelo` en la raíz si no existe).
 
 5. **Ejecutar la aplicación**
    ```bash
@@ -138,12 +133,12 @@ ecoemociones/
 | GET | `/` | Menú principal |
 | GET | `/mimica` | Minijuego de mímica con cámara |
 | GET | `/interactuar` | Minijuego de interacción con la mascota |
-| POST | `/predict` | Recibe `{ "image": "<base64 JPEG>" }` y devuelve `{ "emotion": "<etiqueta>" }` |
+| POST | `/predict` | Recibe `{ "image": "<base64 JPEG>" }`. Devuelve `status` (`ok`, `dudoso` o `sin_rostro`), y cuando aplica `emotion` y `confidence`. Responde 400 si la imagen falta o no es válida. |
 
 ---
 
 ## ⚠️ Limitaciones conocidas
-- El modelo `.h5` debe obtenerse aparte; sin él la aplicación no inicia.
+- El modelo `.h5` debe descargarse aparte desde Releases; sin él la aplicación no inicia.
 - La detección con Haar Cascade funciona mejor con el rostro de frente y buena iluminación.
 - La app se ejecuta en modo `debug=True`, pensado para desarrollo y no para producción.
 
