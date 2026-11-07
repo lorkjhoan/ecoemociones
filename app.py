@@ -82,7 +82,8 @@ def predict():
         return jsonify({"status": "sin_rostro"})
 
     # === PREDICCIÓN ===
-    probs = model.predict(img, verbose=0)[0]
+    # Llamada directa al modelo: más rápida que model.predict() para una sola imagen
+    probs = model(img, training=False).numpy()[0]
 
     idx = int(np.argmax(probs))
     confidence = float(probs[idx])
@@ -97,4 +98,6 @@ def predict():
 
 # === EJECUCIÓN ===
 if __name__ == "__main__":
-    app.run(debug=True)
+    # El modo debug solo se activa si la variable de entorno FLASK_DEBUG vale "1"
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug)

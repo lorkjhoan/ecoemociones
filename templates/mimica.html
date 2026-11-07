@@ -173,7 +173,10 @@
         // Mostrar la emoción más frecuente, con el porcentaje de la predicción actual
         const emocionSuavizada = emocionMasFrecuente(historial);
         const porcentaje = Math.round(result.confidence * 100);
-        emotionText.innerText = `Emoción detectada: ${emocionSuavizada} (${porcentaje}%)`;
+        // Mostrar el porcentaje solo si corresponde a la emoción que se está mostrando
+        emotionText.innerText = emotion === emocionSuavizada
+          ? `Emoción detectada: ${emocionSuavizada} (${porcentaje}%)`
+          : `Emoción detectada: ${emocionSuavizada}`;
 
         // Cambiar la mascota solo si la emoción es distinta a la que ya muestra
         if (emocionSuavizada !== emocionMostrada && emocionesMascota[emocionSuavizada]) {

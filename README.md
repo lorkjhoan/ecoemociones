@@ -9,6 +9,8 @@ Aplicación web que usa **inteligencia artificial** para reconocer emociones en 
 ### 🎭 Mímica emocional (`/mimica`)
 - Activa la cámara web del navegador.
 - Cada **1,5 segundos** captura un fotograma y lo envía al servidor.
+- Cada predicción se envía solo cuando termina la anterior, para no saturar el servidor.
+- Para evitar cambios bruscos, la mascota muestra la emoción más frecuente de las últimas 5 predicciones.
 - El servidor detecta el rostro, lo recorta y un modelo de red neuronal predice la emoción.
 - La mascota cambia su expresión para **imitar la emoción detectada** y se muestra el resultado en pantalla.
 
@@ -120,6 +122,16 @@ ecoemociones/
    ```bash
    python app.py
    ```
+   Para desarrollar con recarga automática y mensajes de error detallados (modo debug):
+   ```powershell
+   # Windows (PowerShell)
+   $env:FLASK_DEBUG="1"
+   python app.py
+   ```
+   ```bash
+   # Linux / macOS
+   FLASK_DEBUG=1 python app.py
+   ```
    Abre en el navegador: **http://127.0.0.1:5000**
 
 > 💡 El navegador pedirá permiso para usar la cámara. Debe abrirse desde `localhost` / `127.0.0.1` (o HTTPS) para que el acceso a la cámara funcione.
@@ -140,7 +152,7 @@ ecoemociones/
 ## ⚠️ Limitaciones conocidas
 - El modelo `.h5` debe descargarse aparte desde Releases; sin él la aplicación no inicia.
 - La detección con Haar Cascade funciona mejor con el rostro de frente y buena iluminación.
-- La app se ejecuta en modo `debug=True`, pensado para desarrollo y no para producción.
+- El servidor incluido en Flask es para desarrollo. El modo debug se activa con la variable de entorno `FLASK_DEBUG=1`.
 
 ---
 
