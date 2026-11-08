@@ -30,22 +30,28 @@ Minijuego sin cámara en el que la mascota reacciona a lo que hace el usuario co
 ## 🧠 ¿Cómo funciona el reconocimiento de emociones?
 
 ```
-Navegador (cámara)  ──►  POST /predict (imagen en base64)
-                              │
-                              ▼
-             OpenCV: detección de rostro (Haar Cascade)
-                              │  se toma el rostro más grande
-                              ▼
-          Recorte → redimensión a 100×100 px → normalización (0–1)
-                              │
-                              ▼
-          Modelo Keras/TensorFlow (modelo_affectnet_v1.h5)
-                              │
-                              ▼
-          Respuesta JSON: { "status": "ok", "emotion": "feliz", "confidence": 0.87 }
+Navegador (cámara)
+        │
+        ▼
+MediaPipe Face Landmarker (en el navegador): detecta la cara
+        │  recorte cuadrado con 20 % de margen
+        ▼
+POST /predict  { "image": "<recorte en base64>", "recortada": true }
+        │  solo se envía el recorte de la cara
+        ▼
+Servidor: redimensión a 100×100 px → normalización (0–1)
+        │
+        ▼
+Modelo Keras/TensorFlow (modelo_affectnet_v1.h5)
+        │
+        ▼
+Respuesta JSON: { "status": "ok", "emotion": "feliz", "confidence": 0.87 }
 ```
 
-- Si no se detecta ningún rostro, no se hace predicción y se responde `{ "status": "sin_rostro" }`; la interfaz le pide al usuario acercarse a la cámara.
+- La cara se detecta y se recorta en el navegador con **MediaPipe Face Landmarker**, que funciona mejor que Haar Cascade con poca luz o con la cara inclinada. Al servidor solo llega el recorte de la cara.
+- Si MediaPipe no ve ninguna cara, no se llama al servidor y la interfaz le pide al usuario acercarse a la cámara.
+- **Respaldo:** si MediaPipe no está disponible (sin internet, navegador incompatible o error), el navegador envía el fotograma completo sin `"recortada"` y el servidor detecta la cara con **OpenCV (Haar Cascade)**, tomando el rostro más grande. En ese caso, si no hay rostro se responde `{ "status": "sin_rostro" }`.
+- La malla y los puntos de la cara nunca se dibujan sobre el video (bajo impacto sensorial). Para verificar la detección, abre `/mimica?debug=1`: se dibuja solo un rectángulo alrededor de la cara.
 - Si la confianza del modelo es menor al 50 % (`UMBRAL_CONFIANZA` en `app.py`), se responde `"status": "dudoso"` y la mascota no cambia, para evitar resultados erróneos.
 - El modelo clasifica **5 emociones**: `asustado`, `enojado`, `feliz`, `sorprendido` y `triste`.
 - El nombre del modelo indica que fue entrenado a partir del dataset **AffectNet**.
@@ -58,7 +64,7 @@ Navegador (cámara)  ──►  POST /predict (imagen en base64)
 |---|---|
 | Backend | Python, Flask |
 | IA / Visión | TensorFlow / Keras, OpenCV, NumPy, Pillow |
-| Frontend | HTML, CSS, JavaScript (API `getUserMedia` y `fetch`), plantillas Jinja2 |
+| Frontend | HTML, CSS, JavaScript (API `getUserMedia` y `fetch`), plantillas Jinja2, MediaPipe Tasks Vision (detección de rostro en el navegador) |
 
 ---
 
@@ -70,6 +76,10 @@ ecoemociones/
 ├── requirements.txt       # Dependencias de Python
 ├── modelo/                # modelo_affectnet_v1.h5 (descargar desde Releases)
 ├── static/
+│   ├── css/
+│   │   └── eco.css        # Estilos compartidos de todas las páginas
+│   ├── mediapipe/
+│   │   └── face_landmarker.task  # Modelo de MediaPipe para detectar la cara (float16)
 │   └── mascota/           # Imágenes de la mascota por emoción
 │       ├── asustado.png
 │       ├── enojado.png

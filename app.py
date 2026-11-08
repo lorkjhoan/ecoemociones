@@ -22,11 +22,20 @@ UMBRAL_CONFIANZA = 0.50
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
 # === FUNCIÓN DE PREPROCESAMIENTO ===
-def preprocess_frame(frame_bytes):
+def preprocess_frame(frame_bytes, ya_recortada=False):
     # Convertir bytes a imagen RGB
     img = Image.open(io.BytesIO(frame_bytes)).convert("RGB")
     img_np = np.array(img)
 
+    # La cara ya viene recortada por MediaPipe desde el navegador:
+    # no se usa Haar Cascade, solo se redimensiona y normaliza
+    if ya_recortada:
+        img_resized = Image.fromarray(img_np).resize((100, 100))
+        img_array = np.array(img_resized) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+        return img_array
+
+    # Respaldo: buscar la cara en el fotograma completo con Haar Cascade
     # Convertir a escala de grises para detectar rostros
     gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
@@ -70,10 +79,13 @@ def predict():
     if not data or not data.get("image"):
         return jsonify({"error": "No se recibió ninguna imagen"}), 400
 
+    # True si el navegador ya recortó la cara con MediaPipe
+    recortada = bool(data.get("recortada", False))
+
     # === DECODIFICAR Y PREPROCESAR IMAGEN ===
     try:
         img_data = base64.b64decode(data["image"])
-        img = preprocess_frame(img_data)
+        img = preprocess_frame(img_data, ya_recortada=recortada)
     except Exception:
         return jsonify({"error": "La imagen no es válida"}), 400
 

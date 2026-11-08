@@ -97,7 +97,15 @@
     </main>
   </div>
 
-  <script>
+  <script type="module">
+    // === MEDIAPIPE TASKS VISION ===
+    // Versión fija de @mediapipe/tasks-vision (verificada en npm): 0.10.35
+    // Nunca usar "latest": una versión nueva podría cambiar la API sin aviso
+    const MEDIAPIPE_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35';
+
+    // Modelo de MediaPipe guardado en el propio proyecto (float16)
+    const MODELO_CARA = "{{ url_for('static', filename='mediapipe/face_landmarker.task') }}";
+
     const video = document.getElementById('video');
     const emotionText = document.getElementById('emotion');
     const mascotaImg = document.getElementById('mascota');
@@ -176,6 +184,127 @@
       ponerTexto(confianzaTexto, `Seguridad del reconocimiento: ${porcentaje} %`);
     }
 
+    // Sin rostro: la persona se fue o tapó la cámara, se reinicia el historial.
+    // Se usa tanto si MediaPipe no ve la cara como si el servidor responde "sin_rostro"
+    function mostrarSinRostro() {
+      historial = [];
+      ponerTexto(emotionTitulo, "No veo tu cara");
+      ponerTexto(emotionText, "Acércate un poco a la cámara.");
+      mostrarConfianza(null);
+      marcarChip(null);
+      escenario.style.backgroundColor = "var(--escenario)";
+    }
+
+    // === DETECCIÓN DE ROSTRO CON MEDIAPIPE ===
+
+    // Margen que se agrega al recorte de la cara (20 % del lado del cuadrado)
+    const MARGEN_RECORTE = 0.20;
+
+    // Detector de MediaPipe (null = no disponible, se usa Haar Cascade en el servidor)
+    let faceLandmarker = null;
+
+    // Modo de depuración: solo con ?debug=1 en la URL se dibuja un rectángulo
+    // alrededor de la cara. Nunca se dibuja la malla ni los puntos, para no
+    // sobrecargar visualmente a los niños (bajo impacto sensorial)
+    const DEPURACION = new URLSearchParams(location.search).get('debug') === '1';
+    let canvasDepuracion = null;
+
+    // Carga MediaPipe y crea el detector. Se importa con import() dinámico para
+    // que, si falla (sin internet, navegador incompatible), la página siga
+    // funcionando como antes y el servidor use Haar Cascade como respaldo
+    async function cargarMediaPipe() {
+      try {
+        const { FaceLandmarker, FilesetResolver } = await import(`${MEDIAPIPE_URL}/vision_bundle.mjs`);
+        const archivosVision = await FilesetResolver.forVisionTasks(`${MEDIAPIPE_URL}/wasm`);
+        faceLandmarker = await FaceLandmarker.createFromOptions(archivosVision, {
+          baseOptions: {
+            modelAssetPath: MODELO_CARA,
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          numFaces: 1
+        });
+      } catch (error) {
+        faceLandmarker = null;
+        console.warn("MediaPipe no está disponible, se usará Haar Cascade en el servidor:", error);
+      }
+    }
+
+    // Busca la cara en el fotograma actual del video.
+    // Devuelve el recorte cuadrado { x, y, lado } en píxeles, o null si no hay cara
+    function detectarCara() {
+      const resultado = faceLandmarker.detectForVideo(video, performance.now());
+      const puntos = resultado.faceLandmarks[0];
+
+      if (!puntos || puntos.length === 0) {
+        dibujarDepuracion(null);
+        return null;
+      }
+
+      const ancho = video.videoWidth;
+      const alto = video.videoHeight;
+
+      // Rectángulo mínimo que contiene todos los puntos (vienen normalizados 0–1)
+      let minX = 1, minY = 1, maxX = 0, maxY = 0;
+      for (const p of puntos) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+      const x1 = minX * ancho, x2 = maxX * ancho;
+      const y1 = minY * alto, y2 = maxY * alto;
+
+      // Hacerlo cuadrado con el lado mayor y agregar el margen,
+      // sin pasarse del tamaño del video
+      let lado = Math.max(x2 - x1, y2 - y1) * (1 + MARGEN_RECORTE);
+      lado = Math.min(lado, ancho, alto);
+
+      // Centrar el cuadrado en la cara y moverlo para que no se salga de los bordes
+      const centroX = (x1 + x2) / 2;
+      const centroY = (y1 + y2) / 2;
+      const x = Math.max(0, Math.min(centroX - lado / 2, ancho - lado));
+      const y = Math.max(0, Math.min(centroY - lado / 2, alto - lado));
+
+      const recorte = { x: Math.round(x), y: Math.round(y), lado: Math.floor(lado) };
+      dibujarDepuracion(recorte);
+      return recorte;
+    }
+
+    // Dibuja un rectángulo simple sobre el video (solo con ?debug=1)
+    function dibujarDepuracion(recorte) {
+      if (!DEPURACION) return;
+
+      // Crear el canvas superpuesto la primera vez. Usa el mismo tamaño y
+      // object-fit que el video, así las coordenadas coinciden con la imagen
+      if (!canvasDepuracion) {
+        canvasDepuracion = document.createElement('canvas');
+        canvasDepuracion.style.cssText =
+          'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none;';
+        video.parentElement.appendChild(canvasDepuracion);
+      }
+      canvasDepuracion.width = video.videoWidth;
+      canvasDepuracion.height = video.videoHeight;
+
+      const ctx = canvasDepuracion.getContext('2d');
+      ctx.clearRect(0, 0, canvasDepuracion.width, canvasDepuracion.height);
+      if (!recorte) return;
+      ctx.strokeStyle = '#2E7D32';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(recorte.x, recorte.y, recorte.lado, recorte.lado);
+    }
+
+    // Dibuja una zona del video en un canvas y la devuelve como JPEG en base64
+    function imagenEnBase64(x, y, ancho, alto) {
+      const canvas = document.createElement('canvas');
+      canvas.width = ancho;
+      canvas.height = alto;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, x, y, ancho, alto, 0, 0, ancho, alto);
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      return dataUrl.split(',')[1];
+    }
+
     // Se pone en false si no hay permiso para usar la cámara
     let camaraDisponible = true;
 
@@ -202,31 +331,50 @@
       }
 
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        const base64Data = dataUrl.split(',')[1];
+        // Datos que se envían al servidor
+        let cuerpo;
+
+        // Buscar la cara con MediaPipe (si cargó). Si falla durante la
+        // detección, se desactiva y se pasa al respaldo con Haar Cascade
+        let recorte = null;
+        let mediapipeActivo = false;
+        if (faceLandmarker) {
+          try {
+            recorte = detectarCara();
+            mediapipeActivo = true;
+          } catch (error) {
+            console.warn("MediaPipe falló al detectar la cara, se usará Haar Cascade en el servidor:", error);
+            faceLandmarker = null;
+          }
+        }
+
+        if (mediapipeActivo) {
+          // MediaPipe no ve la cara: no se llama al servidor
+          if (!recorte) {
+            mostrarSinRostro();
+            return;
+          }
+          // Enviar solo el recorte de la cara, avisando que ya viene recortada
+          const base64Data = imagenEnBase64(recorte.x, recorte.y, recorte.lado, recorte.lado);
+          cuerpo = { image: base64Data, recortada: true };
+        } else {
+          // Respaldo: enviar el fotograma completo para que el servidor busque la cara
+          const base64Data = imagenEnBase64(0, 0, video.videoWidth, video.videoHeight);
+          cuerpo = { image: base64Data };
+        }
 
         const res = await fetch('/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64Data })
+          body: JSON.stringify(cuerpo)
         });
 
         const result = await res.json();
         const emotion = result.emotion;
 
-        // Sin rostro: la persona se fue o tapó la cámara, se reinicia el historial
+        // Sin rostro (respuesta del servidor cuando se usa Haar Cascade)
         if (result.status === "sin_rostro") {
-          historial = [];
-          ponerTexto(emotionTitulo, "No veo tu cara");
-          ponerTexto(emotionText, "Acércate un poco a la cámara.");
-          mostrarConfianza(null);
-          marcarChip(null);
-          escenario.style.backgroundColor = "var(--escenario)";
+          mostrarSinRostro();
           return;
         }
 
@@ -275,8 +423,9 @@
       }
     }
 
-    // Arrancar el ciclo una sola vez
-    ciclo();
+    // Cargar MediaPipe al abrir la página y luego arrancar el ciclo una sola vez
+    // (si MediaPipe falla, cargarMediaPipe() no lanza error y el ciclo usa el respaldo)
+    cargarMediaPipe().then(ciclo);
   </script>
 </body>
 </html>
