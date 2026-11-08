@@ -39,11 +39,23 @@
         <div class="camara-columna">
           <div class="camara">
             <video id="video" autoplay playsinline muted aria-label="Vista de la cámara"></video>
+            <!-- Capa donde se dibujan los puntos de la cara (encima del video) -->
+            <canvas id="capa-landmarks" aria-hidden="true"></canvas>
             <!-- Óvalo guía para ubicar la cara -->
             <svg class="guia-ovalo" viewBox="0 0 220 280" aria-hidden="true">
               <ellipse cx="110" cy="140" rx="106" ry="136" fill="none" stroke="#B9A891" stroke-width="4" stroke-dasharray="10 10" />
             </svg>
             <p class="camara-aviso">Ubica la cara dentro del óvalo</p>
+          </div>
+          <!-- Selector de visualización (solo se muestra con ?debug=1) -->
+          <div id="selector-vista" class="selector-vista" hidden>
+            <label for="vista">Visualización</label>
+            <select id="vista">
+              <option value="puntos">Puntos</option>
+              <option value="malla">Malla</option>
+              <option value="contorno">Contorno</option>
+              <option value="ninguna">Ninguna</option>
+            </select>
           </div>
           <p class="nota-acompanante">Para el acompañante: busquen un lugar con buena luz y siéntense de frente a la cámara.</p>
         </div>
@@ -203,18 +215,64 @@
     // Detector de MediaPipe (null = no disponible, se usa Haar Cascade en el servidor)
     let faceLandmarker = null;
 
-    // Modo de depuración: solo con ?debug=1 en la URL se dibuja un rectángulo
-    // alrededor de la cara. Nunca se dibuja la malla ni los puntos, para no
-    // sobrecargar visualmente a los niños (bajo impacto sensorial)
-    const DEPURACION = new URLSearchParams(location.search).get('debug') === '1';
-    let canvasDepuracion = null;
+    // Último resultado del bucle de detección (null = todavía no hay detección
+    // o el bucle está en pausa). ciclo() lo usa para recortar la cara
+    let ultimoResultado = null;
+
+    // Herramienta de MediaPipe para dibujar y conexiones de la cara (se llenan al cargar)
+    let dibujante = null;
+    let conexionesMalla = [];
+    let conexionesContorno = [];
+
+    // === PARÁMETROS DE LA URL ===
+    const parametrosUrl = new URLSearchParams(location.search);
+
+    // Modo de depuración (?debug=1): muestra el selector de visualización
+    // y el rectángulo del recorte que se envía al servidor
+    const DEPURACION = parametrosUrl.get('debug') === '1';
+
+    // === NIVELES DE VISUALIZACIÓN ===
+    // "puntos" y "malla" son para desarrollo (colores fuertes, mucho detalle).
+    // Con los niños se recomienda "contorno" o "ninguna" (bajo impacto sensorial)
+    const VISTAS = ['puntos', 'malla', 'contorno', 'ninguna'];
+
+    // Elige la visualización inicial:
+    // 1) la que indique ?vista=… en la URL
+    // 2) "puntos" en modo debug
+    // 3) "ninguna" si el sistema pide reducir el movimiento
+    // 4) "contorno" en uso normal
+    function vistaInicial() {
+      const vistaUrl = parametrosUrl.get('vista');
+      if (VISTAS.includes(vistaUrl)) return vistaUrl;
+      if (DEPURACION) return 'puntos';
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return 'ninguna';
+      return 'contorno';
+    }
+
+    // Visualización actual (es "let" porque el selector de depuración la cambia en vivo)
+    let VISUALIZACION = vistaInicial();
+
+    // Lienzo superpuesto al video donde se dibujan los puntos
+    const capaLandmarks = document.getElementById('capa-landmarks');
+    const ctxCapa = capaLandmarks.getContext('2d');
+
+    // Selector de visualización: solo se muestra en modo debug
+    if (DEPURACION) {
+      const selectorVista = document.getElementById('vista');
+      selectorVista.value = VISUALIZACION;
+      selectorVista.addEventListener('change', () => {
+        VISUALIZACION = selectorVista.value;
+        dibujarLandmarks(ultimoResultado);
+      });
+      document.getElementById('selector-vista').hidden = false;
+    }
 
     // Carga MediaPipe y crea el detector. Se importa con import() dinámico para
     // que, si falla (sin internet, navegador incompatible), la página siga
     // funcionando como antes y el servidor use Haar Cascade como respaldo
     async function cargarMediaPipe() {
       try {
-        const { FaceLandmarker, FilesetResolver } = await import(`${MEDIAPIPE_URL}/vision_bundle.mjs`);
+        const { FaceLandmarker, FilesetResolver, DrawingUtils } = await import(`${MEDIAPIPE_URL}/vision_bundle.mjs`);
         const archivosVision = await FilesetResolver.forVisionTasks(`${MEDIAPIPE_URL}/wasm`);
         faceLandmarker = await FaceLandmarker.createFromOptions(archivosVision, {
           baseOptions: {
@@ -224,20 +282,123 @@
           runningMode: "VIDEO",
           numFaces: 1
         });
+
+        // Preparar el dibujo: malla completa y contorno (óvalo, ojos, cejas y labios)
+        dibujante = new DrawingUtils(ctxCapa);
+        conexionesMalla = FaceLandmarker.FACE_LANDMARKS_TESSELATION;
+        conexionesContorno = [
+          ...FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
+          ...FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
+          ...FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
+          ...FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
+          ...FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
+          ...FaceLandmarker.FACE_LANDMARKS_LIPS
+        ];
       } catch (error) {
         faceLandmarker = null;
         console.warn("MediaPipe no está disponible, se usará Haar Cascade en el servidor:", error);
       }
     }
 
-    // Busca la cara en el fotograma actual del video.
-    // Devuelve el recorte cuadrado { x, y, lado } en píxeles, o null si no hay cara
-    function detectarCara() {
-      const resultado = faceLandmarker.detectForVideo(video, performance.now());
-      const puntos = resultado.faceLandmarks[0];
+    // === BUCLE DE DETECCIÓN EN TIEMPO REAL ===
+
+    // Tiempo del último fotograma analizado, para no analizar dos veces el mismo
+    let ultimoTiempoVideo = -1;
+
+    // true mientras haya un requestAnimationFrame programado
+    let bucleActivo = false;
+
+    // Analiza cada fotograma nuevo del video y dibuja los puntos de la cara
+    function bucleDeteccion() {
+      // Pausar si MediaPipe dejó de funcionar o la pestaña no está visible
+      if (!faceLandmarker || document.visibilityState !== 'visible') {
+        bucleActivo = false;
+        ultimoResultado = null;
+        return;
+      }
+
+      // Solo analizar si el video está listo y llegó un fotograma nuevo
+      if (video.videoWidth && video.currentTime !== ultimoTiempoVideo) {
+        ultimoTiempoVideo = video.currentTime;
+        try {
+          ultimoResultado = faceLandmarker.detectForVideo(video, performance.now());
+        } catch (error) {
+          // Si MediaPipe falla durante la detección, se desactiva y
+          // ciclo() pasa al respaldo con Haar Cascade
+          console.warn("MediaPipe falló al detectar la cara, se usará Haar Cascade en el servidor:", error);
+          faceLandmarker = null;
+          ultimoResultado = null;
+          bucleActivo = false;
+          dibujarLandmarks(null);
+          return;
+        }
+        dibujarLandmarks(ultimoResultado);
+      }
+
+      requestAnimationFrame(bucleDeteccion);
+    }
+
+    // Arranca el bucle si MediaPipe está listo y la pestaña está visible
+    function iniciarBucle() {
+      if (bucleActivo || !faceLandmarker || document.visibilityState !== 'visible') return;
+      bucleActivo = true;
+      requestAnimationFrame(bucleDeteccion);
+    }
+
+    // Pausar el bucle con la pestaña oculta y reanudarlo al volver
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        iniciarBucle();
+      } else {
+        // Pestaña oculta: el bucle se detiene en su próxima vuelta y se descarta
+        // el último resultado para que ciclo() no recorte con una detección vieja
+        ultimoResultado = null;
+      }
+    });
+
+    // Dibuja la cara en el lienzo superpuesto según el nivel de visualización
+    function dibujarLandmarks(resultado) {
+      // Ajustar el tamaño del lienzo al del video cuando cambie
+      if (capaLandmarks.width !== video.videoWidth || capaLandmarks.height !== video.videoHeight) {
+        capaLandmarks.width = video.videoWidth;
+        capaLandmarks.height = video.videoHeight;
+      }
+
+      // Limpiar en cada fotograma; si no hay cara, no se dibuja nada más
+      ctxCapa.clearRect(0, 0, capaLandmarks.width, capaLandmarks.height);
+      const puntos = resultado?.faceLandmarks?.[0];
+      if (!puntos || puntos.length === 0 || !dibujante) return;
+
+      if (VISUALIZACION === 'puntos') {
+        // Todos los puntos en verde brillante (solo para desarrollo).
+        // DrawingUtils rellena y además traza el borde: con lineWidth bajo el radio se mantiene en ~1,5
+        dibujante.drawLandmarks(puntos, { color: '#39FF7A', fillColor: '#39FF7A', radius: 1.5, lineWidth: 0.5 });
+      } else if (VISUALIZACION === 'malla') {
+        // Malla completa y los puntos encima (solo para desarrollo)
+        dibujante.drawConnectors(puntos, conexionesMalla, { color: 'rgba(255,255,255,0.55)', lineWidth: 1 });
+        dibujante.drawLandmarks(puntos, { color: '#39FF7A', fillColor: '#39FF7A', radius: 1, lineWidth: 0.5 });
+      } else if (VISUALIZACION === 'contorno') {
+        // Solo el contorno de la cara, ojos, cejas y labios, con el color de acento
+        // en semitransparente y sin puntos (bajo impacto sensorial)
+        dibujante.drawConnectors(puntos, conexionesContorno, { color: 'rgba(47,111,107,0.45)', lineWidth: 2 });
+      }
+      // "ninguna": el lienzo queda limpio
+
+      // En modo debug, además, el rectángulo del recorte que se envía al servidor
+      if (DEPURACION) {
+        const recorte = calcularRecorte(resultado);
+        ctxCapa.strokeStyle = '#2F6F6B';
+        ctxCapa.lineWidth = 2;
+        ctxCapa.strokeRect(recorte.x, recorte.y, recorte.lado, recorte.lado);
+      }
+    }
+
+    // Calcula el recorte cuadrado de la cara a partir de un resultado de MediaPipe.
+    // Devuelve { x, y, lado } en píxeles del video, o null si no hay cara
+    function calcularRecorte(resultado) {
+      const puntos = resultado?.faceLandmarks?.[0];
 
       if (!puntos || puntos.length === 0) {
-        dibujarDepuracion(null);
         return null;
       }
 
@@ -266,32 +427,7 @@
       const x = Math.max(0, Math.min(centroX - lado / 2, ancho - lado));
       const y = Math.max(0, Math.min(centroY - lado / 2, alto - lado));
 
-      const recorte = { x: Math.round(x), y: Math.round(y), lado: Math.floor(lado) };
-      dibujarDepuracion(recorte);
-      return recorte;
-    }
-
-    // Dibuja un rectángulo simple sobre el video (solo con ?debug=1)
-    function dibujarDepuracion(recorte) {
-      if (!DEPURACION) return;
-
-      // Crear el canvas superpuesto la primera vez. Usa el mismo tamaño y
-      // object-fit que el video, así las coordenadas coinciden con la imagen
-      if (!canvasDepuracion) {
-        canvasDepuracion = document.createElement('canvas');
-        canvasDepuracion.style.cssText =
-          'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none;';
-        video.parentElement.appendChild(canvasDepuracion);
-      }
-      canvasDepuracion.width = video.videoWidth;
-      canvasDepuracion.height = video.videoHeight;
-
-      const ctx = canvasDepuracion.getContext('2d');
-      ctx.clearRect(0, 0, canvasDepuracion.width, canvasDepuracion.height);
-      if (!recorte) return;
-      ctx.strokeStyle = '#2E7D32';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(recorte.x, recorte.y, recorte.lado, recorte.lado);
+      return { x: Math.round(x), y: Math.round(y), lado: Math.floor(lado) };
     }
 
     // Dibuja una zona del video en un canvas y la devuelve como JPEG en base64
@@ -334,21 +470,14 @@
         // Datos que se envían al servidor
         let cuerpo;
 
-        // Buscar la cara con MediaPipe (si cargó). Si falla durante la
-        // detección, se desactiva y se pasa al respaldo con Haar Cascade
-        let recorte = null;
-        let mediapipeActivo = false;
+        // Con MediaPipe se usa el último resultado del bucle de detección
+        // (ciclo() ya no llama a detectForVideo)
         if (faceLandmarker) {
-          try {
-            recorte = detectarCara();
-            mediapipeActivo = true;
-          } catch (error) {
-            console.warn("MediaPipe falló al detectar la cara, se usará Haar Cascade en el servidor:", error);
-            faceLandmarker = null;
-          }
-        }
+          // Todavía no hay detección (el bucle recién arranca): esperar a la próxima vuelta
+          if (!ultimoResultado) return;
 
-        if (mediapipeActivo) {
+          const recorte = calcularRecorte(ultimoResultado);
+
           // MediaPipe no ve la cara: no se llama al servidor
           if (!recorte) {
             mostrarSinRostro();
@@ -423,9 +552,17 @@
       }
     }
 
-    // Cargar MediaPipe al abrir la página y luego arrancar el ciclo una sola vez
-    // (si MediaPipe falla, cargarMediaPipe() no lanza error y el ciclo usa el respaldo)
-    cargarMediaPipe().then(ciclo);
+    // Cargar MediaPipe al abrir la página. Cuando termina, arrancar el bucle de
+    // detección (en cuanto el video esté listo) y el ciclo de predicción una sola vez.
+    // Si MediaPipe falla, cargarMediaPipe() no lanza error: no hay bucle y el ciclo usa el respaldo
+    cargarMediaPipe().then(() => {
+      if (video.readyState >= 2) {
+        iniciarBucle();
+      } else {
+        video.addEventListener('loadeddata', iniciarBucle, { once: true });
+      }
+      ciclo();
+    });
   </script>
 </body>
 </html>

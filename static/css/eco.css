@@ -429,6 +429,38 @@ button:focus-visible {
   object-fit: cover;
 }
 
+/* Capa con los puntos de la cara: mismo tamaño y object-fit que el video,
+   así los puntos coinciden con la imagen recortada */
+#capa-landmarks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Selector de visualización (solo en modo debug) */
+.selector-vista {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.selector-vista select {
+  font: inherit;
+  font-size: 15px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 2px solid var(--borde);
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: var(--tinta);
+}
+
 /* Óvalo guía para ubicar la cara */
 .guia-ovalo {
   position: absolute;

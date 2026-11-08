@@ -13,6 +13,21 @@ Aplicación web que usa **inteligencia artificial** para reconocer emociones en 
 - Para evitar cambios bruscos, la mascota muestra la emoción más frecuente de las últimas 5 predicciones.
 - El servidor detecta el rostro, lo recorta y un modelo de red neuronal predice la emoción.
 - La mascota cambia su expresión para **imitar la emoción detectada** y se muestra el resultado en pantalla.
+- MediaPipe analiza cada fotograma del video en tiempo real y puede dibujar los puntos de la cara encima de la cámara. El análisis se pausa cuando la pestaña no está visible.
+
+#### Parámetros de URL
+
+| Parámetro | Valores | Qué hace |
+|---|---|---|
+| `?debug=1` | `1` | Modo desarrollo: muestra debajo del video un selector **Visualización** para cambiar la vista en vivo y dibuja el rectángulo del recorte que se envía al servidor. |
+| `?vista=` | `puntos`, `malla`, `contorno`, `ninguna` | Cómo se dibuja la cara sobre el video. |
+
+- `puntos`: todos los puntos de la cara en verde brillante. **Solo para desarrollo.**
+- `malla`: la malla completa con los puntos encima. **Solo para desarrollo.**
+- `contorno`: solo el contorno de la cara, ojos, cejas y labios, en el color de acento semitransparente y sin puntos. Es la vista por defecto en uso normal.
+- `ninguna`: no se dibuja nada sobre el video.
+
+Con los niños se recomienda `contorno` o `ninguna`, por el requisito de **bajo impacto sensorial (RNF01)**. Si no se indica `?vista`, se usa `puntos` con `?debug=1`, `ninguna` si el sistema tiene activada la opción de reducir el movimiento (`prefers-reduced-motion`) y `contorno` en los demás casos. Ejemplos: `/mimica?vista=ninguna`, `/mimica?debug=1&vista=malla`.
 
 ### 😺 Interactuar con la mascota (`/interactuar`)
 Minijuego sin cámara en el que la mascota reacciona a lo que hace el usuario con el mouse:
@@ -51,7 +66,7 @@ Respuesta JSON: { "status": "ok", "emotion": "feliz", "confidence": 0.87 }
 - La cara se detecta y se recorta en el navegador con **MediaPipe Face Landmarker**, que funciona mejor que Haar Cascade con poca luz o con la cara inclinada. Al servidor solo llega el recorte de la cara.
 - Si MediaPipe no ve ninguna cara, no se llama al servidor y la interfaz le pide al usuario acercarse a la cámara.
 - **Respaldo:** si MediaPipe no está disponible (sin internet, navegador incompatible o error), el navegador envía el fotograma completo sin `"recortada"` y el servidor detecta la cara con **OpenCV (Haar Cascade)**, tomando el rostro más grande. En ese caso, si no hay rostro se responde `{ "status": "sin_rostro" }`.
-- La malla y los puntos de la cara nunca se dibujan sobre el video (bajo impacto sensorial). Para verificar la detección, abre `/mimica?debug=1`: se dibuja solo un rectángulo alrededor de la cara.
+- En uso normal solo se dibuja un contorno suave de la cara (o nada), por el bajo impacto sensorial. Los puntos, la malla y el rectángulo del recorte son para desarrollo; ver los [parámetros de URL](#parámetros-de-url) de la Mímica.
 - Si la confianza del modelo es menor al 50 % (`UMBRAL_CONFIANZA` en `app.py`), se responde `"status": "dudoso"` y la mascota no cambia, para evitar resultados erróneos.
 - El modelo clasifica **5 emociones**: `asustado`, `enojado`, `feliz`, `sorprendido` y `triste`.
 - El nombre del modelo indica que fue entrenado a partir del dataset **AffectNet**.
